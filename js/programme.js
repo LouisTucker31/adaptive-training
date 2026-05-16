@@ -457,10 +457,10 @@ function renderWeekCards(d) {
           <div class="wbw-card-phase-bar" style="background:${colour}"></div>
           <span class="wbw-card__week">Wk ${w.wk}</span>
           <div class="wbw-card__runs">${runRows}</div>
-        </div>
-        <div class="wbw-card__bottom">
-          <span class="wbw-card__intensity">${w.intensity}</span>
-          ${note ? `<button class="wbw-card__note-btn" data-idx="${idx}">Coaching note ↓</button>` : ''}
+          <div class="wbw-card__meta">
+            <span class="wbw-card__intensity">${w.intensity}</span>
+            ${note ? `<button class="wbw-card__note-btn" data-idx="${idx}">Note ↓</button>` : ''}
+          </div>
         </div>
         ${note ? `<div class="wbw-card__note" id="card-note-${idx}">${note}</div>` : ''}
       </div>`;

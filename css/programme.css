@@ -709,18 +709,7 @@
   .wbw-table-wrap { display: none; }
   .wbw-cards { display: flex; flex-direction: column; gap: 0; }
 
-  .wbw-card-phase {
-    font-size: 0.65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-    padding: 0.75rem 1rem 0.4rem;
-    background: var(--bg-secondary);
-    border-top: 1px solid var(--border-soft);
-  }
-
-  .wbw-card-phase:first-child { border-top: none; }
+  .wbw-card-phase { display: none; }
 
   .wbw-card {
     background: var(--card-bg);
@@ -794,24 +783,28 @@
   .wbw-card__run-badge--loaded    { background: rgba(37,99,235,0.1);   color: #2563eb; }
   .wbw-card__run-badge--b2b       { background: rgba(139,92,246,0.1);  color: #8b5cf6; }
 
-  .wbw-card__bottom {
+  .wbw-card__bottom { display: none; }
+
+  .wbw-card__meta {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    margin-top: 0.625rem;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+    flex-shrink: 0;
+    padding-left: 0.5rem;
   }
 
   .wbw-card__intensity {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--text-tertiary);
     white-space: nowrap;
+    text-align: right;
   }
 
   .wbw-card__note-btn {
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.65rem;
+    font-weight: 600;
     color: #2563eb;
     background: none;
     border: none;
@@ -819,7 +812,7 @@
     padding: 0;
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
-    flex-shrink: 0;
+    text-align: right;
   }
 
   .wbw-card__note {
