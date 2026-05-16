@@ -700,3 +700,138 @@
   .prog-nav__link { padding: 0.75rem 0.75rem; font-size: 0.75rem; }
   .programme { padding: 2rem 1rem 5rem; }
 }
+
+/* ── Mobile week cards (replaces table on small screens) ── */
+.wbw-cards { display: none; }
+
+@media (max-width: 640px) {
+  .wbw-breakout { left: 0; transform: none; width: 100%; padding: 0; }
+  .wbw-table-wrap { display: none; }
+  .wbw-cards { display: flex; flex-direction: column; gap: 0; }
+
+  .wbw-card-phase {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    padding: 0.75rem 1rem 0.4rem;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .wbw-card-phase:first-child { border-top: none; }
+
+  .wbw-card {
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-soft);
+    padding: 0.875rem 1rem;
+  }
+
+  .wbw-card-phase-bar {
+    width: 3px;
+    border-radius: 2px;
+    align-self: stretch;
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+  }
+
+  .wbw-card__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .wbw-card__week {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+    padding-top: 1px;
+    min-width: 2.5rem;
+  }
+
+  .wbw-card__runs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+  }
+
+  .wbw-card__run {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .wbw-card__run-label {
+    font-size: 0.7rem;
+    color: var(--text-tertiary);
+    width: 2.75rem;
+    flex-shrink: 0;
+  }
+
+  .wbw-card__run-dist {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .wbw-card__run-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+    white-space: nowrap;
+  }
+
+  .wbw-card__run-badge--recovery  { background: rgba(52,211,153,0.1);  color: #059669; }
+  .wbw-card__run-badge--short     { background: rgba(245,158,11,0.1);  color: #d97706; }
+  .wbw-card__run-badge--loaded    { background: rgba(37,99,235,0.1);   color: #2563eb; }
+  .wbw-card__run-badge--b2b       { background: rgba(139,92,246,0.1);  color: #8b5cf6; }
+
+  .wbw-card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+  }
+
+  .wbw-card__intensity {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  .wbw-card__note-btn {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #2563eb;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .wbw-card__note {
+    font-size: 0.8rem;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 0.5rem;
+    display: none;
+  }
+
+  .wbw-card__note.is-open { display: block; }
+
+  .wbw-card--recovery { background: var(--bg-secondary); }
+}

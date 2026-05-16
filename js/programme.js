@@ -407,7 +407,67 @@ function buildSessions(w, u) {
 
   return sessions;
 }
+function renderWeekCards(d) {
+  const u = ul();
+  const phaseColour = {
+    Foundation: '#34d399', Build: '#2563eb', Specific: '#8b5cf6',
+    'Pre-Peak Rest': '#a78bfa', 'Pre-Race Rest': '#a78bfa',
+    Peak: '#f59e0b', Taper: '#a78bfa',
+    Event: '#f43f5e', Race: '#f43f5e',
+    Consolidate: '#06b6d4', Progress: '#6366f1',
+  };
 
+  const isRunning = d.weeks && d.weeks.length > 0 && d.weeks[0].mainTarget < 30;
+  const runLabel = isRunning ? 'Run' : 'Ride';
+
+  let lastPhase = null;
+  let html = '';
+
+  d.weeks.forEach((w, idx) => {
+    const note = typeof w.note === 'function' ? w.note(u) : w.note;
+    const sessions = buildSessions(w, u);
+    const colour = phaseColour[w.phase] || '#888';
+
+    if (w.phase !== lastPhase) {
+      lastPhase = w.phase;
+      html += `<div class="wbw-card-phase" style="border-left: 3px solid ${colour}">${w.phase}</div>`;
+    }
+
+    const isDown = w.isRecovery || w.isConsolidation;
+    const runRows = sessions.map((s, i) => {
+      if (!s) return '';
+      const label = i === 0 ? `${runLabel} 1` : i === 1 && w.b2b ? 'B2B' : `${runLabel} ${i + 1}`;
+
+      let badge = '';
+      if (i === 0 && w.isRecovery)     badge = `<span class="wbw-card__run-badge wbw-card__run-badge--recovery">Recovery</span>`;
+      if (i === 0 && w.isConsolidation) badge = `<span class="wbw-card__run-badge wbw-card__run-badge--short">Short week</span>`;
+      if (w.b2b && i === 1)            badge = `<span class="wbw-card__run-badge wbw-card__run-badge--b2b">B2B</span>`;
+      if (w.loaded && i === 0)         badge = `<span class="wbw-card__run-badge wbw-card__run-badge--loaded">Loaded</span>`;
+
+      return `<div class="wbw-card__run">
+        <span class="wbw-card__run-label">${label}</span>
+        <span class="wbw-card__run-dist">${s.dist}</span>
+        ${badge}
+      </div>`;
+    }).join('');
+
+    html += `
+      <div class="wbw-card${isDown ? ' wbw-card--recovery' : ''}">
+        <div class="wbw-card__top">
+          <div class="wbw-card-phase-bar" style="background:${colour}"></div>
+          <span class="wbw-card__week">Wk ${w.wk}</span>
+          <div class="wbw-card__runs">${runRows}</div>
+        </div>
+        <div class="wbw-card__bottom">
+          <span class="wbw-card__intensity">${w.intensity}</span>
+          ${note ? `<button class="wbw-card__note-btn" data-idx="${idx}">Coaching note ↓</button>` : ''}
+        </div>
+        ${note ? `<div class="wbw-card__note" id="card-note-${idx}">${note}</div>` : ''}
+      </div>`;
+  });
+
+  return `<div class="wbw-cards" id="wbw-cards">${html}</div>`;
+}
 function renderWeekByWeek(d) {
   const phaseColour = {
     Foundation: '#34d399', Build: '#2563eb', Specific: '#8b5cf6',
@@ -464,6 +524,7 @@ function renderWeekByWeek(d) {
   return `<section class="prog-section" id="sec-weeks">
     ${sectionHeader('05', 'Week-by-Week Programme', 'hdr-weeks')}
     ${renderGraph(d)}
+    ${renderWeekCards(d)}
     <div class="wbw-breakout"><div class="wbw-table-wrap">
       <table class="wbw-table">
         <thead>
@@ -642,6 +703,19 @@ function initDeleteBtn(progId) {
 /* ────────────────────────────────────────────────
    MAIN RENDER
    ──────────────────────────────────────────────── */
+   function initCardNotes() {
+  const cards = document.getElementById('wbw-cards');
+  if (!cards) return;
+  cards.addEventListener('click', e => {
+    const btn = e.target.closest('.wbw-card__note-btn');
+    if (!btn) return;
+    const idx = btn.dataset.idx;
+    const note = document.getElementById(`card-note-${idx}`);
+    if (!note) return;
+    const isOpen = note.classList.toggle('is-open');
+    btn.textContent = isOpen ? 'Coaching note ↑' : 'Coaching note ↓';
+  });
+}
 function renderPage(name, d, progId, sport) {
   sport = sport || 'cycling';
   const demoBadge = d.demo ? '<span class="programme__demo-badge">Demo</span>' : '';
@@ -686,6 +760,7 @@ function renderPage(name, d, progId, sport) {
   initAnchorNav();
   if (!d.demo && progId) initInlineNameEdit(progId);
   if (!d.demo && progId) initDeleteBtn(progId);
+  initCardNotes();
 }
 
 /* ────────────────────────────────────────────────
