@@ -1,0 +1,29 @@
+@media print {
+  .header,
+  .back-nav,
+  .download-wrap {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .programme {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .week-list {
+    break-inside: avoid;
+  }
+
+  .phase {
+    break-inside: avoid;
+  }
+
+  .programme__totals {
+    break-inside: avoid;
+  }
+}
