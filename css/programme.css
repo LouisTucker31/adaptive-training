@@ -173,6 +173,11 @@
   color: var(--text-secondary);
   flex-shrink: 0;
 }
+@media (max-width: 400px) {
+  .profile-label { font-size: 0.75rem; }
+  .profile-value { font-size: 0.75rem; }
+  .profile-row { padding: 0.75rem 0.875rem; }
+}
 .profile-value {
   font-size: 0.8125rem;
   font-weight: 600;
@@ -297,6 +302,7 @@
 
 @media (max-width: 640px) {
   .phase-cell--hide { display: none; }
+  .phase-cell--note { min-width: 120px; font-size: 0.7rem; }
 }
 
 /* ── 05 Week by week ── */
@@ -694,8 +700,8 @@
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
-  .prog-content { padding: 0 1rem 5rem; }
-  .prog-hero__title { font-size: 1.5rem; }
+  .prog-content { padding: 0 0.875rem 5rem; }
+  .prog-hero__title { font-size: clamp(1.25rem, 5vw, 1.5rem); }
   .prog-nav { padding: 0 1rem; }
   .prog-nav__link { padding: 0.75rem 0.75rem; font-size: 0.75rem; }
   .programme { padding: 2rem 1rem 5rem; }
@@ -809,10 +815,14 @@
     background: none;
     border: none;
     cursor: pointer;
-    padding: 0;
+    padding: 0.25rem 0;
     -webkit-tap-highlight-color: transparent;
     white-space: nowrap;
     text-align: right;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
   }
 
   .wbw-card__note {

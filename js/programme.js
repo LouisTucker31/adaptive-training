@@ -795,10 +795,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const found = saved.find(p => p.id === id);
 
   if (!found) {
+    const backHref  = sport === 'running' ? 'running.html' : 'index.html';
+    const backLabel = sport === 'running' ? 'Running' : 'Cycling';
     document.getElementById('app-main').innerHTML =
       '<div style="max-width:640px;margin:2rem auto;padding:3rem 2rem;text-align:center;">' +
         '<p style="font-size:1.1rem;font-weight:600;color:#bbb;">Programme not found.</p>' +
-        '<a href="cycling.html" style="display:inline-block;margin-top:1rem;font-size:0.875rem;color:#2563eb;">← Back to cycling</a>' +
+        `<a href="${backHref}" style="display:inline-block;margin-top:1rem;font-size:0.875rem;color:#2563eb;">← Back to ${backLabel}</a>` +
       '</div>';
     return;
   }
@@ -813,12 +815,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentName = found.name;
       const unit = localStorage.getItem('units') || 'mi';
 
-      // Use the frozen generated output saved at creation time.
-      // This means logic changes do not affect existing saved plans.
-      // To pick up logic changes, the user must create a new plan.
-      const d = { ...found.generated, unit, name: currentName };
+      let d;
+      // Both sports: frozen at creation time — logic changes don't affect saved plans
+      d = { ...found.generated, unit, name: currentName };
 
-      // Unit conversion is still live — distances re-render in mi/km based on settings.
       renderPage(currentName, d, id, sport);
       injectSectionLinks();
     }

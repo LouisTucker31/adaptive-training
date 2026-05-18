@@ -1342,7 +1342,7 @@ function buildWarnings(profile, phases) {
   }
 
   // Always: units note - prompt user to try the other unit
-  warnings.push({ level: 'info', text: (u) => `Distances shown in ${u === 'km' ? 'kilometres' : 'miles'}. Try switching to ${u === 'km' ? 'miles' : 'km'} in settings - all values update automatically.` });
+  warnings.push({ level: 'info', text: 'Distances shown in your selected unit. Switch between miles and km in settings - all values update automatically.' });
   warnings.push({ level: 'info', text: 'Recovery weeks are included by design. Skipping them reduces adaptation and increases injury risk.' });
 
   return warnings;

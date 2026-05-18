@@ -25,20 +25,24 @@ function runDisplay(miles, unit) {
 
 function getRaceDistanceMiles(answers) {
   const map = {
-    '5k':       3.1,
-    '10k':      6.2,
-    'half':     13.1,
-    'marathon': 26.2,
+    '5k':        3.1,
+    '10k':       6.2,
+    'half':      13.1,
+    'marathon':  26.2,
+    'ultra-50k': 31.1,
+    'ultra-50mi':50,
+    'ultra-100k':62.1,
+    'ultra-100mi':100,
   };
   if (answers.raceDistance && map[answers.raceDistance]) {
     return map[answers.raceDistance];
   }
-  // Ultra or other — use ultraDistance free-text input
+  // 'other' — use ultraDistance free-text input
   if (answers.ultraDistance) {
-    const raw = parseFloat(answers.ultraDistance);
-    if (!isNaN(raw)) {
-      const entryUnit = answers.entryUnit || answers.unit || 'mi';
-      return entryUnit === 'km' ? raw / RUN_MI_TO_KM : raw;
+    const raw = parseFloat(String(answers.ultraDistance).replace(/[^\d.]/g, ''));
+    if (!isNaN(raw) && raw > 0) {
+      const u = answers.entryUnit || answers.unit || localStorage.getItem('units') || 'mi';
+      return u === 'km' ? raw / RUN_MI_TO_KM : raw;
     }
   }
   return null;
@@ -180,13 +184,21 @@ function runScoreHistoric(answers) {
   const bgScores = { new: 0, recreational: 1, experienced: 3, returning: 2 };
   score += bgScores[bg] || 1;
 
-  const ever = answers.longestEver || '<3mi';
-  const everMi = parseRunDistance(ever);
-  score += everMi < 6  ? 0
-         : everMi < 13 ? 1
-         : everMi < 26 ? 2
-         : everMi < 50 ? 3
-         : 4;
+  const ever = answers.longestEver || null;
+  if (ever) {
+    const everMi = parseRunDistance(ever);
+    score += everMi < 6  ? 0
+           : everMi < 13 ? 1
+           : everMi < 26 ? 2
+           : everMi < 50 ? 3
+           : 4;
+  } else {
+    // longestEver not asked (fitness/distance goals) — infer from weekly mileage
+    // Someone running 25-50km/week likely has meaningful running history
+    const vol = answers.weeklyMileage || '0';
+    const volProxy = { '0': 0, '<10km': 0, '10-25km': 0.5, '25-50km': 1.5, '50-80km': 2.5, '80km+': 3.5 };
+    score += volProxy[vol] || 0;
+  }
 
   const done = answers.doneBefore || 'first';
   score += done === 'same' ? 2 : done === 'similar' ? 1 : 0;
@@ -226,10 +238,11 @@ function runClassifyAthlete(recentScore, historicScore) {
 
 function runClassifyDemand(eventDist, answers) {
   if (!eventDist) return answers.goal === 'new' ? 'beginner' : 'fitness';
-  if (eventDist >= 26)  return 'ultra';       // marathon+
-  if (eventDist >= 13)  return 'long_endurance'; // half marathon+
-  if (eventDist >= 6)   return 'endurance';    // 10k+
-  return 'short_endurance';                    // 5k
+  if (eventDist > 31)   return 'ultra';          // 50k and beyond
+  if (eventDist >= 26)  return 'long_endurance'; // marathon
+  if (eventDist >= 13)  return 'long_endurance'; // half marathon
+  if (eventDist >= 6)   return 'endurance';      // 10k
+  return 'short_endurance';                      // 5k
 }
 
 function runClassifyRisk(answers, recentScore, eventDist, weeksToEvent) {
@@ -331,8 +344,8 @@ function runAllocatePhases(profile) {
     specific   = demandCat === 'ultra' || demandCat === 'long_endurance' ? 3 : 2;
     build      = total - foundation - specific - peak - taper - event;
   } else if (total <= 18) {
-    foundation = athleteState === 'novice' ? 5 : athleteState === 'highly_trained' ? 3 : 4;
-    specific   = demandCat === 'ultra' || demandCat === 'long_endurance' ? 4 : 3;
+    foundation = athleteState === 'novice' ? 5 : athleteState === 'detrained' ? 3 : athleteState === 'highly_trained' ? 3 : 4;
+    specific   = demandCat === 'ultra' || demandCat === 'long_endurance' ? 3 : 2;
     build      = total - foundation - specific - peak - taper - event;
   } else {
     foundation = athleteState === 'novice' ? 7 : athleteState === 'highly_trained' ? 4 : 5;
@@ -374,7 +387,7 @@ function runAllocatePhases(profile) {
 
 function runBuildWeeks(profile, phases) {
   const { athleteState, riskLevel, daysPerWeek, availType,
-          terrain, isTrail, goalFinish, unit, tools, eventDist } = profile;
+          terrain, isTrail, goalFinish, unit, tools, eventDist, demandCat } = profile;
 
   // Anchor = race/target distance in miles
   // For fitness/new goals with no target, use a sensible ceiling by athlete state
@@ -388,8 +401,10 @@ function runBuildWeeks(profile, phases) {
   const anchor = eventDist || fitnessAnchor || 13;
 
   // Start percentage — where week 1 long run sits as % of anchor
-  const startPct = athleteState === 'novice'        ? 0.20
-    : athleteState === 'detrained'    ? 0.25
+  // For ultra distances, start at a higher percentage so the plan can reach
+  // a meaningful peak long run within the available weeks.
+  const startPct = athleteState === 'novice'          ? 0.20
+    : athleteState === 'detrained'      ? 0.25
     : athleteState === 'highly_trained' ? 0.40
     : 0.30;
 
@@ -397,10 +412,11 @@ function runBuildWeeks(profile, phases) {
   // long runs are typically 70-85% of race distance, not 100%
   let peakPct = (() => {
     const { demandCat } = profile;
-    if (demandCat === 'ultra')          return 0.65; // ultra peak ~65% of race dist
-    if (demandCat === 'long_endurance') return 0.78; // marathon peak ~78% (20mi for marathon)
-    if (demandCat === 'endurance')      return 0.85; // 10k peak ~85%
-    return 0.90;                                      // 5k peak ~90%
+    if (demandCat === 'ultra')          return 0.55;
+    if (demandCat === 'long_endurance') return 0.78;
+    if (demandCat === 'endurance')      return 0.85;
+    if (athleteState === 'novice')      return 0.75; // novice 5k peaks at ~75% race dist
+    return 0.90;
   })();
 
   // Cap for novice/injury
@@ -410,12 +426,17 @@ function runBuildWeeks(profile, phases) {
     else if (athleteState === 'novice') peakPct = Math.min(peakPct, 0.80);
   }
 
-  // Start override from longestRecent — same concept as cycling
+  // Start override from longestRecent — pins week 1 long run to current fitness.
+  // Applied to non-event goals always, and to ultra event goals where the anchor
+  // distance is so large that startPct * anchor produces unrealistic week 1 targets.
   let startOverrideMiles = null;
-  if (profile.goal !== 'event' && profile.longestRecent) {
+  if (profile.longestRecent) {
     const recentMiles = parseRunDistance(profile.longestRecent);
-    const fromRecent = Math.max(1, runRoundTarget(recentMiles * 0.65));
-    startOverrideMiles = Math.min(fromRecent, runRoundTarget(anchor * startPct));
+    const fromRecent = Math.max(1, runRoundTarget(recentMiles * 0.70));
+    const formulaStart = runRoundTarget(anchor * startPct);
+    if (profile.goal !== 'event' || (demandCat === 'ultra' && fromRecent < formulaStart)) {
+      startOverrideMiles = fromRecent;
+    }
   }
 
   // Running uses stricter weekly mileage increase — 8% novice, 10% others
@@ -536,7 +557,7 @@ function runBuildWeeks(profile, phases) {
       }
 
       // Cap week-on-week increase — strict 10% rule for running
-      const isTargetWeek = (id === 'event' && profile.goal === 'distance') || id === 'peak';
+      const isTargetWeek = (id === 'event' && profile.goal === 'distance');
       if (!isRecovery && !isConsolidation && !isTargetWeek && weeks.length > 0) {
         const prevHard = [...weeks].reverse().find(w => !w.isRecovery && !w.isConsolidation);
         if (prevHard) {
@@ -550,6 +571,17 @@ function runBuildWeeks(profile, phases) {
       // Hard ceiling at race/target distance
       if (anchor > 0) {
         mainTarget = Math.min(mainTarget, runRoundTarget(anchor));
+      }
+
+      // Peak week: cap at 50% above the last hard week to prevent huge jumps
+      // This overrides the full peakPct formula when the specific phase hasn't
+      // built high enough to make the jump safe.
+      if (id === 'peak' && weeks.length > 0) {
+        const lastHard = [...weeks].reverse().find(w => !w.isRecovery && !w.isConsolidation);
+        if (lastHard) {
+          const peakCap = runRoundTarget(lastHard.mainTarget * 1.5);
+          mainTarget = Math.min(mainTarget, peakCap);
+        }
       }
 
       // Progress phase minimum growth
@@ -699,8 +731,9 @@ function buildRunWeekNote(phaseId, wkNum, isRecovery, isConsolidation,
     return 'Short week. This should feel noticeably lighter. The legs need to clear before next week.';
   }
   if (phaseId === 'consolidate') {
-    if (phaseProgress < 0.35) return 'Step-back week. Mileage is reduced deliberately - your body is absorbing the foundation work. Keep it easy.';
-    if (phaseProgress < 0.7)  return 'Consolidation continues. Easy effort throughout. Focus on running relaxed and smooth.';
+    if (phaseProgress < 0.2)  return 'Step-back week. Mileage is reduced deliberately - your body is absorbing the foundation work. Keep it easy.';
+    if (phaseProgress < 0.5)  return 'Consolidation continues. Easy effort throughout. Focus on running relaxed and smooth.';
+    if (phaseProgress < 0.8)  return 'Staying easy. Resist the urge to push - the progress block is coming and you need to arrive fresh.';
     return 'Final consolidation week. You should be feeling fresher. The progress block starts next.';
   }
 
@@ -729,23 +762,33 @@ function buildRunWeekNote(phaseId, wkNum, isRecovery, isConsolidation,
   // ── Goal-specific notes ──
   if (goal === 'new') {
     if (phaseId === 'foundation') {
-      if (phaseProgress < 0.25) notes.push('First runs - walk when you need to. Getting out and moving is the only goal right now.');
-      else if (phaseProgress < 0.6) notes.push('You are building a habit. Consistency matters far more than pace or distance at this stage.');
-      else notes.push('Starting to feel more comfortable? Good. Keep the effort easy - it should feel almost too easy.');
+      if (phaseProgress < 0.2) notes.push('First runs - walk when you need to. Getting out and moving is the only goal right now.');
+      else if (phaseProgress < 0.45) notes.push('You are building a habit. Consistency matters far more than pace or distance at this stage.');
+      else if (phaseProgress < 0.75) notes.push('Starting to feel more comfortable? Good. Keep the effort easy - it should feel almost too easy.');
+      else notes.push('Final foundation week. The habit is forming - the next block builds on this.');
     }
     if (phaseId === 'consolidate') notes.push('Lighter week. Use it to rest and notice how your body is responding.');
-    if (phaseId === 'progress')    notes.push('Small steps forward. If it feels easy, that is fine - it is supposed to.');
+    if (phaseId === 'progress') {
+      if (phaseProgress < 0.3)       notes.push('Small steps forward. If it feels easy, that is fine - it is supposed to.');
+      else if (phaseProgress < 0.6)  notes.push('The distances are growing. Keep the effort easy and enjoy the improvement.');
+      else if (phaseProgress < 0.85) notes.push('You have come a long way since week 1. Keep showing up - that is the whole job.');
+      else                           notes.push('Final week. Look back at where you started. This is real progress.');
+    }
   }
 
   else if (goal === 'fitness') {
     if (phaseId === 'foundation') {
       if (phaseProgress < 0.25) notes.push('Establish your routine. Same days each week if you can - the habit is the foundation.');
-      else if (phaseProgress < 0.6) notes.push('Keep efforts conversational. If you cannot hold a full sentence, slow down.');
-      else notes.push('Foundation is bedding in. You should be feeling more comfortable at these distances.');
+      else if (phaseProgress < 0.5) notes.push('Keep efforts conversational. If you cannot hold a full sentence, slow down.');
+      else if (phaseProgress < 0.75) notes.push('Foundation is bedding in. You should be feeling more comfortable at these distances.');
+      else notes.push('Final foundation week. The routine is set - next block the distances step up.');
     }
     if (phaseId === 'consolidate') {
       if (fitnessGoal === 'speed') notes.push('Easier week. Speed work needs fresh legs - this rest makes the next block more effective.');
-      else notes.push('Step-back week. Use the extra energy to sleep well and let the training settle.');
+      else if (phaseProgress < 0.2) notes.push('Step-back week. Mileage is reduced deliberately - your body is absorbing the foundation work. Keep it easy.');
+      else if (phaseProgress < 0.5) notes.push('Consolidation continues. Easy effort throughout. Focus on running relaxed and smooth.');
+      else if (phaseProgress < 0.8) notes.push('Staying easy. Resist the urge to push - the progress block is coming and you need to arrive fresh.');
+      else notes.push('Final consolidation week. You should be feeling fresher. The progress block starts next.');
     }
     if (phaseId === 'progress') {
       if (phaseProgress < 0.3) notes.push('Progress block begins. Notice how these runs feel compared to when you started.');
@@ -866,6 +909,8 @@ function runBuildProfileRows(profile) {
   if (eventDist) {
     const d = unit === 'km' ? Math.round(eventDist * RUN_MI_TO_KM * 10) / 10 : eventDist;
     rows.push({ label: 'Race distance', value: `${d} ${unit}` });
+  } else if (profile.goal === 'event') {
+    rows.push({ label: 'Race distance', value: profile.raceDistance ? profile.raceDistance.toUpperCase() : 'Unknown' });
   }
 
   rows.push({ label: 'Surface', value: surfaceLabels[surface] || surface });
@@ -878,14 +923,15 @@ function runBuildProfileRows(profile) {
 }
 
 function runBuildStrategyText(profile, strategyParts) {
-  const { athleteState, demandCat, goal, weeksToEvent, riskLevel, terrain, isTrail, goalFinish } = profile;
+  const { athleteState, demandCat, goal, weeksToEvent, riskLevel, terrain, isTrail, goalFinish, raceDistance } = profile;
 
   const para1 = (() => {
     if (goal === 'new') return `This ${weeksToEvent}-week plan builds your running from the ground up. The focus is on establishing a routine, staying injury-free, and building confidence - not pace or performance.`;
     if (goal === 'fitness') return `This ${weeksToEvent}-week plan develops your running fitness progressively. The emphasis is on consistency and sustainable improvement.`;
     if (goal === 'distance') return `This plan builds you toward your target distance across ${weeksToEvent} weeks using progressive long-run development. The goal is to arrive at your target feeling capable, not exhausted.`;
     const eventDesc = demandCat === 'ultra' ? 'ultra endurance event'
-      : demandCat === 'long_endurance' ? 'marathon or long distance race'
+      : demandCat === 'long_endurance' && profile.raceDistance === 'marathon' ? 'marathon'
+      : demandCat === 'long_endurance' ? 'half marathon'
       : demandCat === 'endurance' ? 'endurance race'
       : 'race';
     return `This ${weeksToEvent}-week plan prepares you for your ${eventDesc}. The programme builds fitness progressively and delivers you to the start line ready - not worn out.`;
@@ -898,7 +944,9 @@ function runBuildStrategyText(profile, strategyParts) {
   const para3 = (() => {
     if (riskLevel === 'high') return 'Given the risk factors identified, this plan prioritises safe progression. The 10% weekly mileage rule is strictly enforced. Do not skip recovery weeks.';
     if (demandCat === 'ultra') return 'Ultra events are won and lost in training consistency, not peak mileage. Your job is to accumulate time on feet safely - not to replicate the race distance. Trust the process.';
-    if (demandCat === 'long_endurance') return 'The long run is the cornerstone of marathon preparation. Everything else supports it. Arrive at each long run well-rested and execute it at a conversational pace.';
+    if (demandCat === 'long_endurance') return profile.raceDistance === 'marathon'
+      ? 'The long run is the cornerstone of marathon preparation. Everything else supports it. Arrive at each long run well-rested and execute it at a conversational pace.'
+      : 'The long run is the cornerstone of half marathon preparation. Build to it each week and execute it at a truly easy pace - the race itself will feel very different.';
     if (isTrail) return 'Trail running requires technical skill as well as fitness. Include trail-specific sessions throughout to build confidence on technical terrain - not just on race week.';
     if (terrain === 'hilly' || terrain === 'mountainous') return 'Climbing fitness accumulates gradually. Include hilly routes consistently throughout the plan rather than saving them for specific phase sessions only.';
     if (goalFinish === 'time' || goalFinish === 'competitive') return 'Pace work is introduced in the specific phase when your aerobic base is solid enough to support it. Rushing intensity too early is the most common cause of injury and underperformance.';
@@ -936,9 +984,13 @@ function runBuildKeyFocus(profile) {
     focus.push({ title: 'Long run execution', desc: 'The long run is your most important session each week. Run it at a truly easy pace - it should feel almost too slow in the first half.' });
   }
 
-  if (fuelling === 'little' || fuelling === 'none') {
+  if (demandCat === 'short_endurance') {
+    focus.push({ title: 'Hydration basics', desc: 'For a 5k you will not need fuel mid-race. Focus on arriving well hydrated and practising your warm-up routine.' });
+  } else if (goal === 'fitness' || goal === 'new') {
+    focus.push({ title: 'Fuelling on longer runs', desc: 'On runs over 60 minutes, take on carbohydrate and fluids. A gel or snack every 45 minutes keeps energy levels stable and builds good habits.' });
+  } else if (fuelling === 'little' || fuelling === 'none') {
     focus.push({ title: 'Fuelling practice', desc: 'Train your gut to accept carbohydrate during running. Start with small amounts on runs over 45 minutes and build to full race fuelling.' });
-  } else if (demandCat !== 'short_endurance') {
+  } else {
     focus.push({ title: 'Race nutrition', desc: 'Practise your exact race nutrition strategy in training. Never try something new on race day.' });
   }
 
@@ -1031,7 +1083,8 @@ function runPhaseKeySession(id, profile) {
   }
   if (id === 'prepeak_recovery') return 'Short easy runs only - no heroics';
   if (id === 'peak') {
-    if (demandCat === 'long_endurance') return '20-mile long run (marathon) or 10-mile (half)';
+    if (demandCat === 'long_endurance' && profile.raceDistance === 'marathon') return '20-mile long run at easy effort';
+    if (demandCat === 'long_endurance') return '10-mile long run at easy effort';
     if (demandCat === 'ultra') return 'Longest training run - back-to-back days if possible';
     return 'Peak long run at easy effort';
   }
@@ -1061,7 +1114,7 @@ function runBuildGraph(weeks) {
 }
 
 function runBuildGuidance(profile) {
-  const { isTrail, terrain, tools, fuelling, injury, unit, goalFinish, demandCat } = profile;
+  const { isTrail, terrain, tools, fuelling, injury, unit, goalFinish, demandCat, goal } = profile;
   const distWord = unit === 'km' ? 'kilometres' : 'miles';
   const points   = [];
 
@@ -1074,11 +1127,18 @@ function runBuildGuidance(profile) {
       : 'Most runs should feel comfortably conversational. If you cannot hold a full sentence, you are going too fast. Slow down and stay in control.',
   });
 
-  const nutritionBody = fuelling === 'none' || fuelling === 'little'
-    ? 'Start simple: a gel or small snack every 40-45 minutes on runs over 60 minutes. Practice this in training - your gut needs training too, not just your legs.'
-    : demandCat === 'ultra' || demandCat === 'long_endurance'
-    ? 'Target 60-90g carbohydrate per hour on long runs. Practise your exact race nutrition in training - stomach issues are the most common reason for DNFs in long events.'
-    : 'Take on fluid and carbohydrate on runs over 60 minutes. Practise your race nutrition in training, not for the first time on race day.';
+  let nutritionBody;
+  if (demandCat === 'short_endurance') {
+    nutritionBody = 'For a 5k you will not need to eat during the race. Focus on eating a normal meal 2-3 hours before, and staying well hydrated in the days leading up to race day.';
+  } else if (demandCat === 'ultra' || demandCat === 'long_endurance') {
+    nutritionBody = 'Target 60-90g carbohydrate per hour on long runs. Practise your exact race nutrition in training - stomach issues are the most common reason for DNFs in long events.';
+  } else if (goal === 'fitness' || goal === 'new') {
+    nutritionBody = 'On runs over 60 minutes, carry water and a small snack. Energy gels or a banana work well. You do not need elaborate nutrition at these distances - just do not run long on empty.';
+  } else if (fuelling === 'none' || fuelling === 'little') {
+    nutritionBody = 'Start simple: a gel or small snack every 40-45 minutes on runs over 60 minutes. Practise this in training - your gut needs training too, not just your legs.';
+  } else {
+    nutritionBody = 'Take on fluid and carbohydrate on runs over 60 minutes. Practise your race nutrition in training, not for the first time on race day.';
+  }
   points.push({ title: 'Nutrition while running', body: nutritionBody });
 
   points.push({
@@ -1179,7 +1239,11 @@ function runBuildWarnings(profile, phases) {
     warnings.push({ level: 'info', text: 'This is a long plan. Consistency across all weeks matters more than any individual session. Missing one week is fine - missing three in a row needs a plan adjustment.' });
   }
 
-  warnings.push({ level: 'info', text: (u) => `Distances shown in ${u === 'km' ? 'kilometres' : 'miles'}. Switch units in settings - all values update automatically.` });
+  if (profile.daysPerWeek <= 1) {
+    warnings.push({ level: 'amber', text: 'With only 1 training day per week, consistency is critical. Missing even 2-3 sessions has a proportionally larger impact than it would for a higher-frequency athlete. Protect your training days.' });
+  }
+
+  warnings.push({ level: 'info', text: `Distances shown in miles. Switch to km in settings if preferred - all values update automatically.` });
   warnings.push({ level: 'info', text: 'The 10% weekly mileage rule is enforced in this plan. Do not add extra sessions on top of what is prescribed.' });
 
   return warnings;
@@ -1190,8 +1254,21 @@ function runBuildMeta(profile, answers, progName) {
 
   let eventDesc;
   if (goal === 'event') {
-    const distMap = { '5k': '5k', '10k': '10k', half: 'Half Marathon', marathon: 'Marathon', other: 'Ultra' };
-    const distLabel = distMap[answers.raceDistance] || 'Race';
+    const distMap = { '5k': '5k', '10k': '10k', half: 'Half Marathon', marathon: 'Marathon' };
+    let distLabel = distMap[answers.raceDistance];
+    if (!distLabel && answers.ultraDistance) {
+      const u = answers.entryUnit || answers.unit || 'mi';
+      distLabel = `${answers.ultraDistance}${u} Ultra`;
+    }
+    // Handle legacy ultra-Xmi / ultra-Xk values stored directly in raceDistance
+    if (!distLabel && answers.raceDistance && answers.raceDistance.startsWith('ultra-')) {
+      const legacyMap = {
+        'ultra-50k': '50k Ultra', 'ultra-50mi': '50mi Ultra',
+        'ultra-100k': '100k Ultra', 'ultra-100mi': '100mi Ultra',
+      };
+      distLabel = legacyMap[answers.raceDistance] || answers.raceDistance.replace('ultra-', '') + ' Ultra';
+    }
+    distLabel = distLabel || 'Race';
     const surfaceLabel = surface === 'trail' ? 'Trail' : surface === 'mixed' ? 'Mixed terrain' : 'Road';
     const terrainLabel = (terrain === 'hilly' || terrain === 'mountainous') ? ` · ${terrain.charAt(0).toUpperCase() + terrain.slice(1)}` : '';
     eventDesc = `${distLabel} · ${surfaceLabel}${terrainLabel}`;

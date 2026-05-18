@@ -1,44 +1,67 @@
-const activities = [
-  { id: 'cycling',     name: 'Cycling',     icon: '🚴',  enabled: true,  href: 'cycling.html' },
-  { id: 'running',     name: 'Running',     icon: '🏃',  enabled: true,  href: 'running.html' },
-  { id: 'swimming',    name: 'Swimming',    icon: '🏊',  enabled: false },
-  { id: 'strength',    name: 'Strength',    icon: '🏋️',  enabled: false },
-  { id: 'rowing',      name: 'Rowing',      icon: '🚣',  enabled: false },
-  { id: 'triathlon',   name: 'Triathlon',   icon: '🏅',  enabled: false },
-  { id: 'walking',     name: 'Walking',     icon: '🚶',  enabled: false },
-  { id: 'yoga',        name: 'Yoga',        icon: '🧘',  enabled: false },
-  { id: 'hiking',      name: 'Hiking',      icon: '🥾',  enabled: false },
-  { id: 'skiing',      name: 'Skiing',      icon: '⛷️',  enabled: false },
-];
+function getProgrammeCount() {
+  const cycling = JSON.parse(localStorage.getItem('programmes') || '[]').length;
+  const running = JSON.parse(localStorage.getItem('running-programmes') || '[]').length;
+  return cycling + running;
+}
 
-function renderHome() {
+function buildLandingPage() {
   const main = document.getElementById('app-main');
-  if (!main) return;
-
-  const tiles = activities.map(a => {
-    if (a.enabled) {
-      return `
-        <a class="activity-tile activity-tile--active" href="${a.href}" draggable="false">
-          <span class="activity-tile__icon">${a.icon}</span>
-          <span class="activity-tile__name">${a.name}</span>
-        </a>`;
-    }
-    return `
-      <div class="activity-tile activity-tile--disabled" aria-disabled="true">
-        <span class="activity-tile__icon">${a.icon}</span>
-        <span class="activity-tile__name">${a.name}</span>
-        <span class="activity-tile__tag">Coming soon</span>
-      </div>`;
-  }).join('');
+  const count = getProgrammeCount();
+  const countBadge = count > 0
+    ? `<span class="landing-tile__count">${count} active ${count === 1 ? 'plan' : 'plans'}</span>`
+    : `<span class="landing-tile__tag">No plans yet</span>`;
 
   main.innerHTML = `
-    <section class="home">
-      <h1 class="home__heading">Choose your sport</h1>
-      <p class="home__subheading">Select an activity to start your adaptive plan.</p>
-      <p class="home__section-label">Activities</p>
-      <div class="activity-grid">${tiles}</div>
-    </section>
+    <div class="home">
+      <h1 class="home__heading">Adaptive Training</h1>
+      <p class="home__subheading">Build your programme. Track your progress.</p>
+
+      <div class="landing-grid">
+
+        <a class="landing-tile landing-tile--create" href="create.html">
+          <div class="landing-tile__icon" style="color:#7c3aed">✦</div>
+          <div class="landing-tile__name">Create a programme</div>
+          <div class="landing-tile__desc">Build a personalised cycling or running plan</div>
+        </a>
+
+        <a class="landing-tile landing-tile--programmes" href="programmes.html">
+          <div class="landing-tile__icon">📋</div>
+          <div class="landing-tile__name">My programmes</div>
+          <div class="landing-tile__desc">View and continue your saved plans</div>
+          ${countBadge}
+        </a>
+
+        <div class="landing-tile landing-tile--goals landing-tile--disabled">
+          <div class="landing-tile__icon">🎯</div>
+          <div class="landing-tile__name">Goals</div>
+          <div class="landing-tile__desc">Set targets and track what you are working toward</div>
+          <span class="landing-tile__tag">Coming soon</span>
+        </div>
+
+        <div class="landing-tile landing-tile--profile landing-tile--disabled">
+          <div class="landing-tile__icon">👤</div>
+          <div class="landing-tile__name">Profile</div>
+          <div class="landing-tile__desc">Your details, preferences and training history</div>
+          <span class="landing-tile__tag">Coming soon</span>
+        </div>
+
+        <div class="landing-tile landing-tile--pbs landing-tile--disabled">
+          <div class="landing-tile__icon">🏆</div>
+          <div class="landing-tile__name">Personal bests</div>
+          <div class="landing-tile__desc">Your records and achievements</div>
+          <span class="landing-tile__tag">Coming soon</span>
+        </div>
+
+        <div class="landing-tile landing-tile--tests landing-tile--disabled">
+          <div class="landing-tile__icon">🔬</div>
+          <div class="landing-tile__name">Fitness tests</div>
+          <div class="landing-tile__desc">Measure and track your fitness over time</div>
+          <span class="landing-tile__tag">Coming soon</span>
+        </div>
+
+      </div>
+    </div>
   `;
 }
 
-document.addEventListener('DOMContentLoaded', renderHome);
+document.addEventListener('DOMContentLoaded', buildLandingPage);

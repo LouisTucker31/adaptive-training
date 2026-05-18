@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
     <title>Programme - Adaptive Training</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/header.css" />
@@ -15,8 +17,13 @@
 
     <main id="app-main"></main>
 
+    <script>
+      document.body.dataset.backLabel = 'My Programmes';
+      document.body.dataset.backHref  = 'programmes.html';
+    </script>
     <script src="js/header.js?v=3"></script>
     <script src="js/cycling-logic.js?v=21"></script>
+    <script src="js/running-logic.js?v=1"></script>
     <script src="js/programme.js?v=20"></script>
   </body>
 </html>

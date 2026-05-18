@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
     <title>Cycling — Adaptive Training</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/header.css" />
@@ -11,7 +13,6 @@
   <body>
     <header class="header" id="app-header"></header>
 
-    <!-- Wizard nav: back button -->
     <div class="wizard-nav" id="wizard-nav" style="display:none">
       <button class="wizard-nav__back" id="wizard-back-btn" style="display:none" aria-label="Go back">
         <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
@@ -21,7 +22,6 @@
       </button>
     </div>
 
-    <!-- Progress bar pinned to bottom -->
     <div class="wizard-nav__bar-wrap" id="wizard-progress" style="display:none">
       <div class="wizard-nav__bar" id="wizard-progress-bar"></div>
     </div>
@@ -33,11 +33,15 @@
       </div>
     </main>
 
-    <script src="js/header.js?v=39"></script>
-    <script src="js/wizard.js?v=39"></script>
-    <script src="js/cycling-questions.js?v=43"></script>
+    <script>
+      document.body.dataset.backLabel = 'Create a programme';
+      document.body.dataset.backHref  = 'create.html';
+    </script>
+    <script src="js/header.js?v=3"></script>
+    <script src="js/wizard.js?v=1"></script>
+    <script src="js/cycling-questions.js?v=1"></script>
     <script src="js/cycling-logic.js?v=21"></script>
-    <script src="js/cycling-review.js?v=41"></script>
-    <script src="js/cycling.js?v=39"></script>
+    <script src="js/cycling-review.js?v=1"></script>
+    <script src="js/cycling.js?v=1"></script>
   </body>
 </html>

@@ -336,15 +336,24 @@ function buildRunNewFitnessStep(el, next) {
 }
 
 function buildRunWeeklyMileageStep(el, next) {
-  const u = getUnit();
-  rMcStep(el, 'weeklyMileage', 'How much do you currently run per week?', null, [
-    { value: '0',        label: 'Not running at the moment' },
-    { value: '<10km',    label: u === 'km' ? 'Less than 10km'  : 'Less than 6 miles' },
-    { value: '10-25km',  label: u === 'km' ? '10–25km'         : '6–15 miles' },
-    { value: '25-50km',  label: u === 'km' ? '25–50km'         : '15–30 miles' },
-    { value: '50-80km',  label: u === 'km' ? '50–80km'         : '30–50 miles' },
-    { value: '80km+',    label: u === 'km' ? '80km+'           : '50+ miles' },
-  ], next);
+  function render() {
+    const u = getUnit();
+    const current = runningAnswers['weeklyMileage'];
+    rMcStep(el, 'weeklyMileage', 'How much do you currently run per week?', null, [
+      { value: '0',       label: 'Not running at the moment' },
+      { value: '<10km',   label: u === 'km' ? 'Less than 10km' : 'Less than 6 miles' },
+      { value: '10-25km', label: u === 'km' ? '10–25km'        : '6–15 miles' },
+      { value: '25-50km', label: u === 'km' ? '25–50km'        : '15–30 miles' },
+      { value: '50-80km', label: u === 'km' ? '50–80km'        : '30–50 miles' },
+      { value: '80km+',   label: u === 'km' ? '80km+'          : '50+ miles' },
+    ], next);
+    if (current) {
+      const btn = el.querySelector(`[data-value="${current}"]`);
+      if (btn) btn.classList.add('is-selected');
+    }
+  }
+  render();
+  document.addEventListener('unitsChanged', render);
 }
 
 function buildRunConsistencyStep(el, next) {
@@ -357,43 +366,61 @@ function buildRunConsistencyStep(el, next) {
 }
 
 function buildRunLongestRecentStep(el, next) {
-  const u = getUnit();
-  rMcStep(el, 'longestRecent', 'Longest run in the last 8 weeks?', null,
-    u === 'km' ? [
-      { value: '<5km',    label: 'Less than 5km' },
-      { value: '5-10km',  label: '5–10km' },
-      { value: '10-21km', label: '10–21km' },
-      { value: '21-42km', label: '21–42km' },
-      { value: '42km+',   label: '42km+' },
-    ] : [
-      { value: '<3mi',    label: 'Less than 3 miles' },
-      { value: '3-6mi',   label: '3–6 miles' },
-      { value: '6-13mi',  label: '6–13 miles' },
-      { value: '13-26mi', label: '13–26 miles' },
-      { value: '26mi+',   label: '26+ miles' },
-    ],
-  next);
+  function render() {
+    const u = getUnit();
+    const current = runningAnswers['longestRecent'];
+    rMcStep(el, 'longestRecent', 'Longest run in the last 8 weeks?', null,
+      u === 'km' ? [
+        { value: '<5km',    label: 'Less than 5km' },
+        { value: '5-10km',  label: '5–10km' },
+        { value: '10-21km', label: '10–21km' },
+        { value: '21-42km', label: '21–42km' },
+        { value: '42km+',   label: '42km+' },
+      ] : [
+        { value: '<3mi',    label: 'Less than 3 miles' },
+        { value: '3-6mi',   label: '3–6 miles' },
+        { value: '6-13mi',  label: '6–13 miles' },
+        { value: '13-26mi', label: '13–26 miles' },
+        { value: '26mi+',   label: '26+ miles' },
+      ],
+    next);
+    if (current) {
+      const btn = el.querySelector(`[data-value="${current}"]`);
+      if (btn) btn.classList.add('is-selected');
+    }
+  }
+  render();
+  document.addEventListener('unitsChanged', render);
 }
 
 function buildRunLongestEverStep(el, next) {
-  const u = getUnit();
-  rMcStep(el, 'longestEver', "Longest run you've ever done?", null,
-    u === 'km' ? [
-      { value: '<5km',    label: 'Less than 5km' },
-      { value: '5-10km',  label: '5–10km' },
-      { value: '10-21km', label: '10–21km' },
-      { value: '21-42km', label: '21–42km' },
-      { value: '42-80km', label: '42–80km' },
-      { value: '80km+',   label: '80km+' },
-    ] : [
-      { value: '<3mi',    label: 'Less than 3 miles' },
-      { value: '3-6mi',   label: '3–6 miles' },
-      { value: '6-13mi',  label: '6–13 miles' },
-      { value: '13-26mi', label: '13–26 miles' },
-      { value: '26-50mi', label: '26–50 miles' },
-      { value: '50mi+',   label: '50+ miles' },
-    ],
-  next);
+  function render() {
+    const u = getUnit();
+    const current = runningAnswers['longestEver'];
+    rMcStep(el, 'longestEver', "Longest run you've ever done?", null,
+      u === 'km' ? [
+        { value: '<5km',    label: 'Less than 5km' },
+        { value: '5-10km',  label: '5–10km' },
+        { value: '10-21km', label: '10–21km' },
+        { value: '21-42km', label: '21–42km' },
+        { value: '42-80km', label: '42–80km' },
+        { value: '80km+',   label: '80km+' },
+      ] : [
+        { value: '<3mi',    label: 'Less than 3 miles' },
+        { value: '3-6mi',   label: '3–6 miles' },
+        { value: '6-13mi',  label: '6–13 miles' },
+        { value: '13-26mi', label: '13–26 miles' },
+        { value: '26-50mi', label: '26–50 miles' },
+        { value: '50mi+',   label: '50+ miles' },
+      ],
+    next);
+    if (current) {
+      const btn = el.querySelector(`[data-value="${current}"]`);
+      if (btn) btn.classList.add('is-selected');
+    }
+  }
+  render();
+  document.addEventListener('unitsChanged', render);
 }
 
 function buildRunDaysPerWeekStep(el, next) {
