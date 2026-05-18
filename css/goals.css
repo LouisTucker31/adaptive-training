@@ -1,0 +1,245 @@
+/* ── Goals ── */
+
+.goals-form-wrap {
+  margin-bottom: 0;
+}
+
+.goals-add-card {
+  padding: 0;
+}
+
+.goals-add-card__btn {
+  display: block;
+  width: 100%;
+  padding: 0.875rem 1.125rem;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2563eb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s ease;
+}
+
+.goals-add-card__btn:hover {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .goals-add-card__btn {
+  color: #6b9fff;
+}
+
+.goals-empty {
+  padding: 1.5rem 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.goals-empty__text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goals-empty__sub {
+  font-size: 0.8125rem;
+  color: var(--text-tertiary);
+}
+
+.goal-form {
+  padding: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.goal-form__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.goal-form__custom-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.goal-form__actions {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}
+
+.goal-baseline-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}
+
+.goal-baseline-hint strong {
+  color: var(--text);
+}
+
+/* Goal cards */
+
+.goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.goals-list--achieved {
+  opacity: 0.65;
+}
+
+.goal-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.goal-card--achieved {
+  border-color: var(--border-soft);
+}
+
+.goal-card__header {
+  padding: 1rem 1.125rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.goal-card__info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.goal-card__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goal-card__date {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.goal-card__meta {
+  display: flex;
+  gap: 0.875rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.goal-baseline {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.goal-target {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.goal-countdown {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.625rem;
+  border-radius: 20px;
+}
+
+.goal-countdown--future {
+  background: rgba(37,99,235,0.08);
+  color: #2563eb;
+}
+
+.goal-countdown--soon {
+  background: rgba(245,158,11,0.1);
+  color: #d97706;
+}
+
+.goal-countdown--past {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .goal-countdown--future {
+  background: rgba(107,159,255,0.12);
+  color: #6b9fff;
+}
+
+[data-theme="dark"] .goal-countdown--soon {
+  background: rgba(251,191,36,0.1);
+  color: #fbbf24;
+}
+
+.goal-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.625rem 1.125rem;
+  border-top: 1px solid var(--border-soft);
+  background: var(--bg-secondary);
+}
+
+.goal-achieve-btn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #16a34a;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.1s ease;
+}
+
+.goal-achieve-btn:hover { opacity: 0.7; }
+
+[data-theme="dark"] .goal-achieve-btn { color: #34d399; }
+
+.goal-achieved-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+[data-theme="dark"] .goal-achieved-label { color: #34d399; }
+
+.goal-delete-btn {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-left: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.1s ease;
+}
+
+.goal-delete-btn:hover { color: #ef4444; }
+
+@media (max-width: 600px) {
+  .goal-card__meta { gap: 0.5rem; }
+}
+
+.home .profile-section {
+  margin-bottom: 1rem;
+}
+
+.home .profile-section:last-child {
+  margin-bottom: 0;
+}

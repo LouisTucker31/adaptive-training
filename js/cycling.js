@@ -1,7 +1,7 @@
 /* ── Cycling page — boot ── */
 
 function getPreviousProgrammes() {
-  return JSON.parse(localStorage.getItem('programmes') || '[]');
+  try { return JSON.parse(localStorage.getItem('programmes') || '[]'); } catch { return []; }
 }
 
 function buildStep1() {
@@ -17,10 +17,10 @@ function buildStep1() {
         <div class="prev-programme-card" data-id="${p.id}" data-name="${p.name}" role="button" tabindex="0">
           <div class="prev-programme-card__info">
             <div class="prev-programme-card__name-row">
-              <span class="prev-programme-card__name">${p.name}</span>
+              <span class="prev-programme-card__name">${escapeHTML(p.name)}</span>
               ${p.demo ? '<span class="prev-programme-card__demo-badge">Demo</span>' : ''}
             </div>
-            <span class="prev-programme-card__meta">${p.meta}</span>
+            <span class="prev-programme-card__meta">${escapeHTML(p.meta)}</span>
           </div>
           <span class="prev-programme-card__arrow">›</span>
         </div>`).join('')}
@@ -57,13 +57,7 @@ function buildStep1() {
   choices.forEach(btn => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.value;
-      const alreadySelected = btn.classList.contains('is-selected');
       choices.forEach(b => b.classList.remove('is-selected'));
-      if (alreadySelected) {
-        el.classList.remove('has-selection');
-        if (prevListEl) prevListEl.classList.remove('is-open');
-        return;
-      }
       btn.classList.add('is-selected');
       el.classList.add('has-selection');
       if (value === 'existing' && prevListEl) {
@@ -76,6 +70,7 @@ function buildStep1() {
         });
       } else if (value === 'new') {
         if (prevListEl) prevListEl.classList.remove('is-open');
+        btn.disabled = true;
         startWizard();
       }
     });
@@ -91,7 +86,6 @@ function selectProgramme(card) {
 }
 
 /* ── Dynamic step management ── */
-const STEP_POOL_SIZE = 25;
 let stepEls = [];
 let allBuilders = [];   // full resolved list of builders after branch chosen
 let builtUpTo = -1;     // highest index built so far
@@ -133,22 +127,25 @@ function spliceAfterCurrent(builder) {
 function startWizard() {
   builtUpTo = -1;
   stepEls = [];
+  allBuilders = [];
 
-  // Show nav bar and shift wizard down to account for it
+  // Hide page-level back nav — wizard back button takes over
+  const pageBackNav = document.querySelector('.back-nav');
+  if (pageBackNav) pageBackNav.style.display = 'none';
+
   document.getElementById('wizard-nav').style.display = 'flex';
   document.querySelector('.wizard').classList.add('wizard--started');
 
   // Goal step is index 0 in dynamic pool
   allBuilders = [
     (el, next) => buildGoalStep(el, (goal) => {
-      // Once goal is chosen, splice in the branch builders + review
       const branch = getBranchBuilders(goal);
       allBuilders = [
-        allBuilders[0], // goal step stays
+        allBuilders[0],
         ...branch,
         (el2, _) => { el2.classList.add('wizard-step--review'); buildReviewStep(el2, saveAndNavigate); },
       ];
-      wizard.setTotal(allBuilders.length);
+      wizard.setTotal(allBuilders.length - 1);
       next();
     }),
   ];
@@ -158,10 +155,9 @@ function startWizard() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Register step 1
+  wizard.init();
   wizard.register(document.getElementById('step-programme'));
   buildStep1();
-  wizard.init();
 
   // Back button
   document.getElementById('wizard-back-btn').addEventListener('click', () => {

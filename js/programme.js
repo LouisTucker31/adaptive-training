@@ -1,6 +1,109 @@
 /* ── Programme page ── */
 
-const MI_TO_KM = 1.60934;
+const MI_TO_KM = 1.60934; // shared conversion — cycling-logic uses MI_TO_KM_L, running-logic uses RUN_MI_TO_KM (consolidate post-MVP)
+
+/* ── Profile helpers ── */
+
+function loadUserProfile() {
+  try { return JSON.parse(localStorage.getItem('user-profile') || '{}'); }
+  catch { return {}; }
+}
+
+const INTENSITY_ZONE_MAP = {
+  'Zone 1':           { min: 1, max: 1 },
+  'Zone 1-2':         { min: 1, max: 2 },
+  'Zone 1–2':         { min: 1, max: 2 },
+  'Zone 2':           { min: 2, max: 2 },
+  'Zone 2-3':         { min: 2, max: 3 },
+  'Zone 2–3':         { min: 2, max: 3 },
+  'Zone 3':           { min: 3, max: 3 },
+  'Easy':             { min: 1, max: 2 },
+  'Easy / Moderate':  { min: 2, max: 2 },
+  'Moderate / Tempo': { min: 3, max: 3 },
+};
+
+const ZONE_PCT = [
+  { min: 0,    max: 0.60 },
+  { min: 0.60, max: 0.70 },
+  { min: 0.70, max: 0.80 },
+  { min: 0.80, max: 0.90 },
+  { min: 0.90, max: 1.00 },
+];
+
+function intensityWithHR(intensity, maxhr) {
+  const hr = parseInt(maxhr);
+  if (!hr || hr < 100 || hr > 220) return escapeHTML(intensity);
+  const zones = INTENSITY_ZONE_MAP[intensity];
+  if (!zones) return escapeHTML(intensity);
+  const lo = Math.round(hr * ZONE_PCT[zones.min - 1].min);
+  const hi = Math.round(hr * ZONE_PCT[zones.max - 1].max);
+  const range = (zones.min === 1 && ZONE_PCT[zones.min - 1].min === 0)
+    ? `&lt;${hi} bpm`
+    : `${lo}–${hi} bpm`;
+  return `${escapeHTML(intensity)} <span class="wbw-intensity-hr">${range}</span>`;
+}
+
+function getPrimaryBike(profile) {
+  const eq = Array.isArray(profile.equipment) ? profile.equipment : [];
+  const bike = eq.find(e => e.type === 'bike');
+  return bike ? (bike.name || bike.brand || null) : null;
+}
+
+function getPrimaryShoes(profile) {
+  const eq = Array.isArray(profile.equipment) ? profile.equipment : [];
+  const shoe = eq.find(e => e.type === 'shoes');
+  return shoe ? (shoe.name || shoe.brand || null) : null;
+}
+
+function loadUserPBs() {
+  try { return JSON.parse(localStorage.getItem('user-pbs') || '{}'); }
+  catch { return {}; }
+}
+
+function getPBDisplay(pbs, key) {
+  const val = pbs[key];
+  if (!val) return null;
+  const entry = val.current || val;
+  if (!entry) return null;
+  if (entry.secs) {
+    const h = Math.floor(entry.secs / 3600);
+    const m = Math.floor((entry.secs % 3600) / 60);
+    const s = entry.secs % 60;
+    return h > 0
+      ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+      : `${m}:${String(s).padStart(2,'0')}`;
+  }
+  if (entry.dist)   return entry.dist;
+  if (entry.ascent) return entry.ascent;
+  return null;
+}
+
+// Jack Daniels-based easy/tempo pace from 5km or 10km time
+function deriveRunningPaces(pbs) {
+  const keys = [
+    { key: 'r_5k', distKm: 5 },
+    { key: 'r_10k', distKm: 10 },
+    { key: 'r_half', distKm: 21.0975 },
+  ];
+  for (const { key, distKm } of keys) {
+    const val = pbs[key];
+    if (!val) continue;
+    const entry = val.current || val;
+    if (!entry || !entry.secs) continue;
+    const racePaceSecPerKm = entry.secs / distKm;
+    const easyPaceSecPerKm  = Math.round(racePaceSecPerKm * 1.35);
+    const tempoPaceSecPerKm = Math.round(racePaceSecPerKm * 1.10);
+    const fmt = (s) => `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+    return {
+      source: key,
+      easyPaceKm:  fmt(easyPaceSecPerKm),
+      tempoPaceKm: fmt(tempoPaceSecPerKm),
+      easyPaceMi:  fmt(Math.round(easyPaceSecPerKm * 1.60934)),
+      tempoPaceMi: fmt(Math.round(tempoPaceSecPerKm * 1.60934)),
+    };
+  }
+  return null;
+}
 function getUnit() { return localStorage.getItem('units') || 'mi'; }
 function cvt(miles) { return getUnit() === 'km' ? Math.round(miles * MI_TO_KM) : miles; }
 function ul() { return getUnit(); }
@@ -177,7 +280,7 @@ function renderPhaseOverview(d) {
       <td class="phase-cell--weeks">${p.weeks}</td>
       <td class="phase-cell--hide">${p.goal}</td>
       <td class="phase-cell--load">${p.load}</td>
-      <td class="phase-cell--hide">${typeof p.keySession === 'function' ? p.keySession(u) : p.keySession}</td>
+      <td class="phase-cell--hide">${typeof p.keySession === 'function' ? p.keySession(u) : (p.keySession || '—')}</td>
       <td class="phase-cell--note">${typeof p.note === 'function' ? p.note(u) : p.note}</td>
     </tr>`).join('');
   return `<section class="prog-section" id="sec-phases">
@@ -458,8 +561,8 @@ function renderWeekCards(d) {
           <span class="wbw-card__week">Wk ${w.wk}</span>
           <div class="wbw-card__runs">${runRows}</div>
           <div class="wbw-card__meta">
-            <span class="wbw-card__intensity">${w.intensity}</span>
-            ${note ? `<button class="wbw-card__note-btn" data-idx="${idx}">Note ↓</button>` : ''}
+            <span class="wbw-card__intensity">${intensityWithHR(w.intensity, loadUserProfile().maxhr)}</span>
+            ${note ? `<button class="wbw-card__note-btn" data-idx="${idx}">Coaching note ↓</button>` : ''}
           </div>
         </div>
         ${note ? `<div class="wbw-card__note" id="card-note-${idx}">${note}</div>` : ''}
@@ -516,7 +619,7 @@ function renderWeekByWeek(d) {
       ${phaseChange ? phaseCell : ''}
       <td class="wbw-wk">Wk ${w.wk}</td>
       ${sessionCells}
-      <td class="wbw-intensity">${w.intensity}</td>
+      <td class="wbw-intensity">${intensityWithHR(w.intensity, loadUserProfile().maxhr)}</td>
       <td class="wbw-note">${note}</td>
     </tr>`;
   }).join('');
@@ -543,11 +646,38 @@ function renderWeekByWeek(d) {
 }
 
 function renderGuidance(d) {
-  const items = d.guidance.points.map(p => `
+  const userProfile = loadUserProfile();
+  const bikeName    = getPrimaryBike(userProfile);
+  const shoeName    = getPrimaryShoes(userProfile);
+  const sport       = d.sport || 'cycling';
+  const pbs         = loadUserPBs();
+  const unit        = getUnit();
+  const paces       = sport === 'running' ? deriveRunningPaces(pbs) : null;
+
+  const extraPoints = [];
+
+  if (bikeName && sport !== 'running') {
+    extraPoints.push({ title: 'Your bike', body: `This plan is built around riding your ${escapeHTML(bikeName)}. Make sure it is well set up and recently serviced before the harder phases begin.` });
+  }
+  if (shoeName && sport === 'running') {
+    extraPoints.push({ title: 'Your shoes', body: `You will be putting a lot of miles on your ${escapeHTML(shoeName)}. Track when you got them and consider rotating with a second pair in the higher volume weeks.` });
+  }
+  if (paces && sport === 'running') {
+    const easyPace  = unit === 'km' ? paces.easyPaceKm  + '/km' : paces.easyPaceMi  + '/mi';
+    const tempoPace = unit === 'km' ? paces.tempoPaceKm + '/km' : paces.tempoPaceMi + '/mi';
+    extraPoints.push({
+      title: 'Your training paces',
+      body: `Based on your PB, your easy runs should feel around ${escapeHTML(easyPace)} per ${unit === 'km' ? 'kilometre' : 'mile'}. Tempo efforts should sit around ${escapeHTML(tempoPace)}. Easy really means easy — if you cannot hold a full conversation, slow down.`,
+    });
+  }
+
+  const allPoints = [...(d.guidance.points || []), ...extraPoints];
+  const items = allPoints.map(p => `
     <div class="guidance-item">
       <div class="guidance-title">${p.title}</div>
       <div class="guidance-body">${p.body}</div>
     </div>`).join('');
+
   return `<section class="prog-section" id="sec-guidance">
     ${sectionHeader('06', 'Support Guidance', 'hdr-guidance')}
     <p class="guidance-intro">${d.guidance.intro}</p>
@@ -674,8 +804,9 @@ function saveProgrammeName(progId, newName) {
   if (!progId) return;
   const params = new URLSearchParams(window.location.search);
   const key = params.get('sport') === 'running' ? 'running-programmes' : 'programmes';
-  const saved = JSON.parse(localStorage.getItem(key) || '[]');
-  const prog = saved.find(p => p.id === progId);
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch { saved = []; }
+  const idx = saved.findIndex(p => p.id === progId);
   if (!prog) return;
   prog.name = newName;
   localStorage.setItem(key, JSON.stringify(saved));
@@ -694,9 +825,10 @@ function initDeleteBtn(progId) {
     const params = new URLSearchParams(window.location.search);
     const sport = params.get('sport') || 'cycling';
     const key = sport === 'running' ? 'running-programmes' : 'programmes';
-    const saved = JSON.parse(localStorage.getItem(key) || '[]');
-    localStorage.setItem(key, JSON.stringify(saved.filter(p => p.id !== progId)));
-    window.location.href = sport === 'running' ? 'running.html' : 'index.html';
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch { saved = []; }
+    try { localStorage.setItem(key, JSON.stringify(saved.filter(p => p.id !== progId))); } catch {}
+    window.location.href = 'programmes.html';
   });
 }
 
@@ -727,9 +859,37 @@ function renderPage(name, d, progId, sport) {
     <div class="prog-page">
       <div class="prog-content">
         <div class="prog-hero">
-          <p class="prog-hero__eyebrow">Adaptive Training · ${sport === 'running' ? 'Running' : 'Cycling'}</p>
+          <p class="prog-hero__eyebrow">Adaptive Training · ${sport === 'running' ? 'Running' : 'Cycling'}${(() => { const p = loadUserProfile(); return p.firstName && !d.demo ? ` · ${escapeHTML(p.firstName)}'s plan` : ''; })()}</p>
+          ${!d.demo ? (() => {
+            const pbs = loadUserPBs();
+            const unit = getUnit();
+            if (sport === 'running') {
+              const keys = [
+                { key: 'r_mara', label: 'Marathon PB' },
+                { key: 'r_half', label: 'Half marathon PB' },
+                { key: 'r_10k',  label: '10km PB' },
+                { key: 'r_5k',   label: '5km PB' },
+              ];
+              for (const { key, label } of keys) {
+                const pb = getPBDisplay(pbs, key);
+                if (pb) return `<p class="prog-hero__pb">Building on your ${escapeHTML(label)}: <strong>${escapeHTML(pb)}</strong></p>`;
+              }
+            } else {
+              const keys = [
+                { key: 'c_100mi', label: 'Century PB' },
+                { key: 'c_50mi',  label: '50 mile PB' },
+                { key: 'c_25mi',  label: '25 mile PB' },
+              ];
+              for (const { key, label } of keys) {
+                const pb = getPBDisplay(pbs, key);
+                if (pb) return `<p class="prog-hero__pb">Building on your ${escapeHTML(label)}: <strong>${escapeHTML(pb)}</strong></p>`;
+              }
+            }
+            return '';
+          })() : ''}
           <div class="prog-hero__title-row">
-            <h1 class="prog-hero__title" id="prog-hero-title"${editHint}>${name}</h1>
+            <h1 class="prog-hero__title" id="prog-hero-title"${editHint}>${escapeHTML(name)}</h1>
+          ${!d.demo ? (() => { const p = loadUserProfile(); return p.firstName ? `<p class="prog-hero__personal">Personalised for ${escapeHTML(p.firstName)}</p>` : ''; })() : ''}
             ${demoBadge}
             ${!d.demo && progId ? `<button class="prog-hero__delete" id="prog-delete-btn" aria-label="Delete programme">
               <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
@@ -791,7 +951,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const params2 = new URLSearchParams(window.location.search);
   const sport   = params2.get('sport') || 'cycling';
   const storageKey = sport === 'running' ? 'running-programmes' : 'programmes';
-  const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { saved = []; }
   const found = saved.find(p => p.id === id);
 
   if (!found) {
@@ -805,8 +966,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  document.body.dataset.backLabel = sport === 'running' ? 'Running' : 'Cycling';
-  document.body.dataset.backHref  = sport === 'running' ? 'running.html' : 'cycling.html';
+  const from = params.get('from');
+  if (from === 'programmes') {
+    document.body.dataset.backLabel = 'My Programmes';
+    document.body.dataset.backHref  = 'programmes.html';
+  } else {
+    document.body.dataset.backLabel = sport === 'running' ? 'Running' : 'Cycling';
+    document.body.dataset.backHref  = sport === 'running' ? 'running.html' : 'cycling.html';
+  }
   initBackNav();
 
   /* Generated programme - use full template */
@@ -817,7 +984,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       let d;
       // Both sports: frozen at creation time — logic changes don't affect saved plans
-      d = { ...found.generated, unit, name: currentName };
+      d = { ...found.generated, unit, name: currentName, sport };
 
       renderPage(currentName, d, id, sport);
       injectSectionLinks();

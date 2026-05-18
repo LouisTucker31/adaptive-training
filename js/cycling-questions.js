@@ -63,6 +63,7 @@ function textStep(el, key, question, hint, placeholder, onContinue) {
 }
 
 function distanceInputStep(el, key, question, hint, onContinue) {
+  let _unitsListener = null;
   function render() {
     const unit = getUnit();
     el.innerHTML = `
@@ -127,34 +128,14 @@ function distanceInputStep(el, key, question, hint, onContinue) {
   }
   render();
 
-  const onUnitsChanged = () => render();
-  document.addEventListener('unitsChanged', onUnitsChanged);
-}
-
-function dateStep(el, key, question, hint, onContinue) {
-  el.innerHTML = `
-    <div class="wizard-step__inner">
-      <span class="wizard-step__connector"></span>
-      <p class="wizard-step__question">${question}</p>
-      ${hint ? `<p class="wizard-step__hint">${hint}</p>` : ''}
-      <div class="wizard-input-wrap">
-        <input class="wizard-input" id="input-${key}" type="date" />
-        <button class="wizard-continue" id="btn-${key}" disabled>Continue →</button>
-      </div>
-    </div>
-  `;
-  const input = el.querySelector(`#input-${key}`);
-  const btn   = el.querySelector(`#btn-${key}`);
-  input.addEventListener('change', () => { btn.disabled = !input.value; });
-  btn.addEventListener('click', () => {
-    if (!input.value) return;
-    answers[key] = input.value;
-    onContinue();
-  });
+  if (_unitsListener) document.removeEventListener('unitsChanged', _unitsListener);
+  _unitsListener = () => render();
+  document.addEventListener('unitsChanged', _unitsListener);
 }
 
 /* ── Distance MC step - re-renders when units change via settings toggle ── */
 function distanceMcStep(el, key, question, hint, kmOptions, miOptions, onSelect) {
+  let _unitsListener = null;
   function render() {
     const unit = getUnit();
     const options = unit === 'km' ? kmOptions : miOptions;
@@ -186,8 +167,9 @@ function distanceMcStep(el, key, question, hint, kmOptions, miOptions, onSelect)
 
   render();
 
-  const onUnitsChanged = () => render();
-  document.addEventListener('unitsChanged', onUnitsChanged);
+  if (_unitsListener) document.removeEventListener('unitsChanged', _unitsListener);
+  _unitsListener = () => render();
+  document.addEventListener('unitsChanged', _unitsListener);
 }
 
 /* ── Step builders ── */

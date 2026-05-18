@@ -17,11 +17,11 @@ const runningAnswerLabels = {
   consistency:     { label: 'Consistency', map: { barely: 'Barely running', occasional: 'Occasionally', fairly: 'Fairly consistent', very: 'Very consistent' } },
   longestRecent:   { label: 'Longest run (8 weeks)', map: { '<3mi': '<3 miles', '3-6mi': '3–6 miles', '6-13mi': '6–13 miles', '13-26mi': '13–26 miles', '26mi+': '26+ miles', '<5km': '<5km', '5-10km': '5–10km', '10-21km': '10–21km', '21-42km': '21–42km', '42km+': '42km+' } },
   longestEver:     { label: 'Longest run ever', map: { '<3mi': '<3 miles', '3-6mi': '3–6 miles', '6-13mi': '6–13 miles', '13-26mi': '13–26 miles', '26-50mi': '26–50 miles', '50mi+': '50+ miles', '<5km': '<5km', '5-10km': '5–10km', '10-21km': '10–21km', '21-42km': '21–42km', '42-80km': '42–80km', '80km+': '80km+' } },
-  daysPerWeek:     { label: 'Training days/week', map: { '2': '2 days', '3': '3 days', '4': '4 days', '5': '5 days', '6': '6 days' } },
+  daysPerWeek:     { label: 'Training days/week', map: { '1': '1 day', '2': '2 days', '3': '3 days', '4': '4+ days' } },
   longRunDay:      { label: 'Long run day', map: { weekend: 'Weekend', weekday: 'Weekday', flexible: 'Flexible' } },
   injury:          { label: 'Injuries', map: { none: 'None', minor: 'Minor niggle', ongoing: 'Ongoing injury' } },
   energy:          { label: 'Energy & sleep', map: { good: 'Good', mixed: 'Mixed', poor: 'Poor' } },
-  otherSports:     { label: 'Other training', map: { strength: 'Strength training', cycling: 'Cycling', swimming: 'Swimming', other: 'Other sport', none: 'Running only' } },
+  otherSports:     { label: 'Other training', map: { light: 'Light activity', moderate: 'Moderate activity', hard: 'Hard training', none: 'Running only' } },
   tools:           { label: 'Training tools', multiMap: { hrm: 'Heart rate monitor', gps: 'GPS watch', power: 'Running power meter', none: 'None' } },
   background:      { label: 'Running background', map: { new: 'New to running', recreational: 'Recreational', experienced: 'Experienced', returning: 'Returning after break' } },
   doneBefore:      { label: 'Done before', map: { first: 'First time', similar: 'Similar distance', same: 'This exact distance' } },
@@ -87,8 +87,8 @@ function buildRunningReviewStep(el, onDone) {
     <div class="wizard-step__inner review-inner">
       <span class="wizard-step__connector"></span>
       <div class="review-name-wrap">
-        <div class="review-name-heading" id="review-name-display" tabindex="0" role="button" aria-label="Edit programme name">${name}</div>
-        <input class="review-name-input" id="input-progname" type="text" value="${name}" autocomplete="off" aria-label="Programme name" style="display:none" />
+        <div class="review-name-heading" id="review-name-display" tabindex="0" role="button" aria-label="Edit programme name">${escapeHTML(name)}</div>
+        <input class="review-name-input" id="input-progname" type="text" value="${escapeHTML(name)}" autocomplete="off" aria-label="Programme name" style="display:none" />
       </div>
       <p class="wizard-step__hint">Tap a row to change your answer.</p>
       <div class="review-list">${rows}</div>
@@ -186,8 +186,10 @@ function runSaveAndNavigate(progName, answers) {
   try {
     generated = generateRunningProgramme(answers, progName);
   } catch (e) {
-    console.error('generateRunningProgramme failed:', e);
-    alert('Something went wrong building your programme. Please check your answers and try again.\n\n' + e.message);
+    const errBox = document.createElement('div');
+    errBox.style.cssText = 'margin:1rem auto;max-width:480px;padding:1rem 1.25rem;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.875rem;line-height:1.5';
+    errBox.textContent = 'Something went wrong building your programme. Please check your answers and try again.';
+    el.querySelector('.wizard-step__inner')?.appendChild(errBox);
     return;
   }
 
@@ -202,26 +204,17 @@ function runSaveAndNavigate(progName, answers) {
     sport: 'running',
   };
 
-  const existing = JSON.parse(localStorage.getItem('running-programmes') || '[]');
+  let existing;
+  try { existing = JSON.parse(localStorage.getItem('running-programmes') || '[]'); } catch { existing = []; }
   existing.unshift(prog);
-  localStorage.setItem('running-programmes', JSON.stringify(existing));
+  try { localStorage.setItem('running-programmes', JSON.stringify(existing)); } catch (e) {
+    alert('Could not save your programme. Your browser storage may be full.');
+    return;
+  }
 
   runShowLoading(() => {
-    window.location.href = `programme.html?id=${id}&name=${encodeURIComponent(progName)}&sport=running`;
+    window.location.href = `programme.html?id=${id}&name=${encodeURIComponent(progName)}&sport=running&from=sport`;
   });
 }
 
-function runShowLoading(onDone) {
-  const overlay = document.createElement('div');
-  overlay.className = 'loading-overlay';
-  overlay.innerHTML = `
-    <div class="loading-box">
-      <div class="loading-spinner"></div>
-      <p class="loading-title">Building your programme</p>
-      <p class="loading-sub">Adaptive Training is personalising your plan…</p>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('is-visible'));
-  setTimeout(onDone, 2800);
-}
+function runShowLoading(onDone) { _showLoadingOverlay(onDone); }

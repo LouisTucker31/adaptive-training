@@ -236,6 +236,11 @@
   margin-top: 1px;
 }
 
+[data-theme="dark"] .focus-num {
+  background: #4b5563;
+  color: #f0f0f0;
+}
+
 .focus-body {
   display: flex;
   flex-direction: column;
@@ -457,13 +462,7 @@
   color: var(--text);
   white-space: nowrap;
 }
-.wbw-ride__desc {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-tertiary);
-  font-weight: 400;
-  margin-top: 0.1rem;
-}
+
 .wbw-ride--loaded .wbw-ride__dist { color: #2563eb; }
 [data-theme="dark"] .wbw-ride--loaded .wbw-ride__dist { color: #6b9fff; }
 
@@ -837,4 +836,33 @@
   .wbw-card__note.is-open { display: block; }
 
   .wbw-card--recovery { background: var(--bg-secondary); }
+}
+
+/* ── Profile personalisation ── */
+
+.prog-hero__personal {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+  letter-spacing: 0.01em;
+}
+
+.prog-hero__pb {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 0.375rem;
+}
+
+.prog-hero__pb strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wbw-intensity-hr {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-left: 0.25rem;
+  white-space: nowrap;
 }

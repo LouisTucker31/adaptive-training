@@ -353,7 +353,8 @@ function buildRunWeeklyMileageStep(el, next) {
     }
   }
   render();
-  document.addEventListener('unitsChanged', render);
+  let _weeklyMileageListener = render;
+  document.addEventListener('unitsChanged', _weeklyMileageListener);
 }
 
 function buildRunConsistencyStep(el, next) {
@@ -389,6 +390,10 @@ function buildRunLongestRecentStep(el, next) {
       if (btn) btn.classList.add('is-selected');
     }
   }
+  if (buildRunWeeklyMileageStep._listener) document.removeEventListener('unitsChanged', buildRunWeeklyMileageStep._listener);
+  buildRunWeeklyMileageStep._listener = render;
+  if (buildRunLongestRecentStep._listener) document.removeEventListener('unitsChanged', buildRunLongestRecentStep._listener);
+  buildRunLongestRecentStep._listener = render;
   render();
   document.addEventListener('unitsChanged', render);
 }
@@ -419,6 +424,8 @@ function buildRunLongestEverStep(el, next) {
       if (btn) btn.classList.add('is-selected');
     }
   }
+  if (buildRunLongestRecentStep._listener) document.removeEventListener('unitsChanged', buildRunLongestRecentStep._listener);
+  buildRunLongestRecentStep._listener = render;
   render();
   document.addEventListener('unitsChanged', render);
 }

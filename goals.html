@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Adaptive Training — personalised cycling and running training plans." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="apple-touch-icon" href="favicon.svg" />
+    <title>Goals — Adaptive Training</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/header.css" />
+    <link rel="stylesheet" href="css/home.css" />
+    <link rel="stylesheet" href="css/profile.css" />
+    <link rel="stylesheet" href="css/pbs.css" />
+    <link rel="stylesheet" href="css/goals.css" />
+    <script>
+      (function(){
+        var t = localStorage.getItem('theme');
+        if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="header" id="app-header"></header>
+    <main id="app-main"></main>
+    <script>
+      document.body.dataset.backLabel = 'Home';
+      document.body.dataset.backHref  = 'index.html';
+    </script>
+    <script src="js/header.js"></script>
+    <script src="js/goals.js"></script>
+  </body>
+</html>

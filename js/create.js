@@ -1,12 +1,21 @@
 function buildCreatePage() {
   const main = document.getElementById('app-main');
 
-  const sports = [
-    { id: 'cycling', name: 'Cycling', icon: '🚴', enabled: true,  href: 'cycling.html' },
-    { id: 'running', name: 'Running', icon: '🏃', enabled: true,  href: 'running.html' },
+  let sports = [
+    { id: 'cycling',  name: 'Cycling',  icon: '🚴', enabled: true,  href: 'cycling.html' },
+    { id: 'running',  name: 'Running',  icon: '🏃', enabled: true,  href: 'running.html' },
     { id: 'swimming', name: 'Swimming', icon: '🏊', enabled: false },
     { id: 'strength', name: 'Strength', icon: '🏋️', enabled: false },
   ];
+
+  // Put primary sport first if set in profile
+  try {
+    const profile = JSON.parse(localStorage.getItem('user-profile') || '{}');
+    const primary = profile.primarySport ? profile.primarySport.toLowerCase() : null;
+    if (primary === 'cycling' || primary === 'running') {
+      sports.sort((a, b) => (a.id === primary ? -1 : b.id === primary ? 1 : 0));
+    }
+  } catch {}
 
   const tiles = sports.map(s => {
     if (s.enabled) {

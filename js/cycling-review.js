@@ -8,6 +8,7 @@ const answerLabels = {
   eventDuration:   { label: 'Event duration', text: true },
   eventDays:       { label: 'Event days', map: { '1': '1 day', '2': '2 days', '3': '3 days', '4+': '4+ days' } },
   weeksToEvent:    { label: 'Weeks to event', text: true },
+  targetDateValue: { label: 'Weeks to goal', text: true },
   elevation:       { label: 'Terrain', map: { flat: 'Flat', rolling: 'Rolling', hilly: 'Hilly', mountainous: 'Mountainous' } },
   goalFinish:      { label: 'Finish goal', map: { survive: 'Just finish', comfortable: 'Finish comfortably', strong: 'Finish strong', competitive: 'Race it' } },
   loaded:          { label: 'Luggage', map: { no: 'Unloaded', light: 'Light luggage', loaded: 'Fully loaded' } },
@@ -91,8 +92,8 @@ function buildReviewStep(el, onCreateProgramme) {
     <div class="wizard-step__inner review-inner">
       <span class="wizard-step__connector"></span>
       <div class="review-name-wrap">
-        <div class="review-name-heading" id="review-name-display" tabindex="0" role="button" aria-label="Edit programme name">${name}</div>
-        <input class="review-name-input" id="input-progname" type="text" value="${name}" autocomplete="off" aria-label="Programme name" style="display:none" />
+        <div class="review-name-heading" id="review-name-display" tabindex="0" role="button" aria-label="Edit programme name">${escapeHTML(name)}</div>
+        <input class="review-name-input" id="input-progname" type="text" value="${escapeHTML(name)}" autocomplete="off" aria-label="Programme name" style="display:none" />
       </div>
       <p class="wizard-step__hint">Tap a row to change your answer.</p>
       <div class="review-list">${rows}</div>
@@ -238,8 +239,10 @@ function saveAndNavigate(progName, answers) {
   try {
     generated = generateProgramme(answers, progName);
   } catch (e) {
-    console.error('generateProgramme failed:', e);
-    alert('Something went wrong building your programme. Please check your answers and try again.\n\n' + e.message);
+    const errBox = document.createElement('div');
+    errBox.style.cssText = 'margin:1rem auto;max-width:480px;padding:1rem 1.25rem;background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;color:#991b1b;font-size:0.875rem;line-height:1.5';
+    errBox.textContent = 'Something went wrong building your programme. Please check your answers and try again.';
+    el.querySelector('.wizard-step__inner')?.appendChild(errBox);
     return;
   }
 
@@ -253,26 +256,17 @@ function saveAndNavigate(progName, answers) {
     generated,
   };
 
-  const existing = JSON.parse(localStorage.getItem('programmes') || '[]');
+  let existing;
+  try { existing = JSON.parse(localStorage.getItem('programmes') || '[]'); } catch { existing = []; }
   existing.unshift(prog);
-  localStorage.setItem('programmes', JSON.stringify(existing));
+  try { localStorage.setItem('programmes', JSON.stringify(existing)); } catch (e) {
+    alert('Could not save your programme. Your browser storage may be full.');
+    return;
+  }
 
   showLoading(() => {
-    window.location.href = `programme.html?id=${id}&name=${encodeURIComponent(progName)}`;
+    window.location.href = `programme.html?id=${id}&name=${encodeURIComponent(progName)}&from=sport`;
   });
 }
 
-function showLoading(onDone) {
-  const overlay = document.createElement('div');
-  overlay.className = 'loading-overlay';
-  overlay.innerHTML = `
-    <div class="loading-box">
-      <div class="loading-spinner"></div>
-      <p class="loading-title">Building your programme</p>
-      <p class="loading-sub">Adaptive Training is personalising your plan…</p>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('is-visible'));
-  setTimeout(onDone, 2800);
-}
+function showLoading(onDone) { _showLoadingOverlay(onDone); }

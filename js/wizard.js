@@ -37,6 +37,11 @@ const wizard = (() => {
 
   function back() {
     if (history.length === 0) return;
+    // If going back to step 0, restore the page back nav
+    if (history[history.length - 1] === 0) {
+      const pageBackNav = document.querySelector('.back-nav');
+      if (pageBackNav) pageBackNav.style.display = 'flex';
+    }
     const prevIndex = history.pop();
     const prevItem  = steps[prevIndex];
     const currItem  = steps[current];
@@ -66,16 +71,27 @@ const wizard = (() => {
 
     if (backBtn) backBtn.style.display = history.length > 0 ? 'flex' : 'none';
 
-    if (progress && window._wizardTotal) {
-      const pct = Math.round((current / window._wizardTotal) * 100);
-      if (progressBar) progressBar.style.width = pct + '%';
-      if (progressText) progressText.textContent = current + ' of ' + window._wizardTotal;
-      progress.style.display = window._wizardTotal > 1 ? 'flex' : 'none';
+    if (progress) {
+      const isReview = steps[current] && steps[current].el.classList.contains('wizard-step--review');
+      if (isReview || current === 0) {
+        progress.style.display = 'none';
+      } else if (window._wizardRealTotal) {
+        const pct = Math.round((current / window._wizardRealTotal) * 100);
+        if (progressBar) progressBar.style.width = pct + '%';
+        progress.style.display = 'flex';
+      } else {
+        if (progressBar) progressBar.style.width = '5%';
+        progress.style.display = 'flex';
+      }
     }
   }
 
-  function setTotal(n) {
-    window._wizardTotal = n;
+  function setTotal(n, provisional) {
+    if (provisional) {
+      window._wizardRealTotal = null;
+    } else {
+      window._wizardRealTotal = n;
+    }
     updateNav();
   }
 
@@ -89,3 +105,18 @@ const wizard = (() => {
 
   return { register, advance, back, reveal, init, setTotal, getCurrent };
 })();
+
+function _showLoadingOverlay(onDone) {
+  const overlay = document.createElement('div');
+  overlay.className = 'loading-overlay';
+  overlay.innerHTML = `
+    <div class="loading-box">
+      <div class="loading-spinner"></div>
+      <p class="loading-title">Building your programme</p>
+      <p class="loading-sub">Adaptive Training is personalising your plan\u2026</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('is-visible'));
+  setTimeout(onDone, 2800);
+}

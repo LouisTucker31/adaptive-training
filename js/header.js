@@ -1,3 +1,12 @@
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function initHeader() {
   const header = document.getElementById('app-header');
   if (!header) return;
@@ -49,7 +58,6 @@ function initHeader() {
           </div>
         </div>
         <div class="settings-panel__divider"></div>
-        <a class="settings-panel__more" href="#">More settings</a>
       </div>
     </div>
   `;

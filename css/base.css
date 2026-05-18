@@ -51,3 +51,7 @@ body {
   min-height: 100vh;
   transition: background 0.2s ease, color 0.2s ease;
 }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}

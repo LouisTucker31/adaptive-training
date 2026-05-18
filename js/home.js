@@ -1,7 +1,8 @@
 function getProgrammeCount() {
-  const cycling = JSON.parse(localStorage.getItem('programmes') || '[]').length;
-  const running = JSON.parse(localStorage.getItem('running-programmes') || '[]').length;
-  return cycling + running;
+  function safeParse(key) {
+    try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch { return []; }
+  }
+  return safeParse('programmes').length + safeParse('running-programmes').length;
 }
 
 function buildLandingPage() {
@@ -31,26 +32,23 @@ function buildLandingPage() {
           ${countBadge}
         </a>
 
-        <div class="landing-tile landing-tile--goals landing-tile--disabled">
+        <a class="landing-tile landing-tile--goals" href="goals.html">
           <div class="landing-tile__icon">🎯</div>
           <div class="landing-tile__name">Goals</div>
           <div class="landing-tile__desc">Set targets and track what you are working toward</div>
-          <span class="landing-tile__tag">Coming soon</span>
-        </div>
+        </a>
 
-        <div class="landing-tile landing-tile--profile landing-tile--disabled">
+        <a class="landing-tile landing-tile--profile" href="profile.html">
           <div class="landing-tile__icon">👤</div>
           <div class="landing-tile__name">Profile</div>
           <div class="landing-tile__desc">Your details, preferences and training history</div>
-          <span class="landing-tile__tag">Coming soon</span>
-        </div>
+        </a>
 
-        <div class="landing-tile landing-tile--pbs landing-tile--disabled">
+        <a class="landing-tile landing-tile--pbs" href="pbs.html">
           <div class="landing-tile__icon">🏆</div>
           <div class="landing-tile__name">Personal bests</div>
           <div class="landing-tile__desc">Your records and achievements</div>
-          <span class="landing-tile__tag">Coming soon</span>
-        </div>
+        </a>
 
         <div class="landing-tile landing-tile--tests landing-tile--disabled">
           <div class="landing-tile__icon">🔬</div>

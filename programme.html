@@ -2,28 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Adaptive Training — personalised cycling and running training plans." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="apple-touch-icon" href="favicon.svg" />
     <title>Programme - Adaptive Training</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/header.css" />
-    <link rel="stylesheet" href="css/programme.css?v=3" />
+    <link rel="stylesheet" href="css/programme.css" />
     <link rel="stylesheet" href="css/print.css" />
     <script>if ('scrollRestoration' in history) history.scrollRestoration = 'manual';</script>
+  <script>
+    (function(){
+      var t = localStorage.getItem('theme');
+      if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+  </script>
   </head>
   <body>
     <header class="header" id="app-header"></header>
 
     <main id="app-main"></main>
 
-    <script>
-      document.body.dataset.backLabel = 'My Programmes';
-      document.body.dataset.backHref  = 'programmes.html';
-    </script>
-    <script src="js/header.js?v=3"></script>
-    <script src="js/cycling-logic.js?v=21"></script>
+    <script src="js/header.js"></script>
+    <script src="js/cycling-logic.js"></script>
     <script src="js/running-logic.js?v=1"></script>
-    <script src="js/programme.js?v=20"></script>
+    <script src="js/programme.js"></script>
   </body>
 </html>

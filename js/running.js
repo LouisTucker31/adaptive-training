@@ -1,8 +1,7 @@
 /* ── Running page — boot ── */
 
 function getRunningPreviousProgrammes() {
-  const saved = JSON.parse(localStorage.getItem('running-programmes') || '[]');
-  return saved;
+  try { return JSON.parse(localStorage.getItem('running-programmes') || '[]'); } catch { return []; }
 }
 
 function buildRunStep1() {
@@ -18,9 +17,9 @@ function buildRunStep1() {
         <div class="prev-programme-card" data-id="${p.id}" data-name="${p.name}" role="button" tabindex="0">
           <div class="prev-programme-card__info">
             <div class="prev-programme-card__name-row">
-              <span class="prev-programme-card__name">${p.name}</span>
+              <span class="prev-programme-card__name">${escapeHTML(p.name)}</span>
             </div>
-            <span class="prev-programme-card__meta">${p.meta}</span>
+            <span class="prev-programme-card__meta">${escapeHTML(p.meta)}</span>
           </div>
           <span class="prev-programme-card__arrow">›</span>
         </div>`).join('')}
@@ -57,13 +56,7 @@ function buildRunStep1() {
   choices.forEach(btn => {
     btn.addEventListener('click', () => {
       const value = btn.dataset.value;
-      const alreadySelected = btn.classList.contains('is-selected');
       choices.forEach(b => b.classList.remove('is-selected'));
-      if (alreadySelected) {
-        el.classList.remove('has-selection');
-        if (prevListEl) prevListEl.classList.remove('is-open');
-        return;
-      }
       btn.classList.add('is-selected');
       el.classList.add('has-selection');
       if (value === 'existing' && prevListEl) {
@@ -86,6 +79,7 @@ function buildRunStep1() {
         });
       } else if (value === 'new') {
         if (prevListEl) prevListEl.classList.remove('is-open');
+        btn.disabled = true;
         startRunWizard();
       }
     });
@@ -135,6 +129,11 @@ function spliceRunAfterCurrent(builder) {
 function startRunWizard() {
   runBuiltUpTo = -1;
   runStepEls = [];
+  runAllBuilders = [];
+
+  // Hide page-level back nav — wizard back button takes over
+  const pageBackNav = document.querySelector('.back-nav');
+  if (pageBackNav) pageBackNav.style.display = 'none';
 
   document.getElementById('wizard-nav').style.display = 'flex';
   document.querySelector('.wizard').classList.add('wizard--started');
@@ -147,7 +146,7 @@ function startRunWizard() {
         ...branch,
         (el2, _) => { el2.classList.add('wizard-step--review'); buildRunningReviewStep(el2, runSaveAndNavigate); },
       ];
-      wizard.setTotal(runAllBuilders.length);
+      wizard.setTotal(runAllBuilders.length - 1);
       next();
     }),
   ];
@@ -157,9 +156,9 @@ function startRunWizard() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  wizard.init();
   wizard.register(document.getElementById('step-programme'));
   buildRunStep1();
-  wizard.init();
 
   document.getElementById('wizard-back-btn').addEventListener('click', () => {
     wizard.back();
