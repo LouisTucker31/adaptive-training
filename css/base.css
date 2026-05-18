@@ -55,3 +55,19 @@ body {
 [data-theme="dark"] {
   color-scheme: dark;
 }
+
+/* ── Prevent iOS auto-zoom on input focus ── */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="text"],
+  input[type="number"],
+  input[type="date"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
